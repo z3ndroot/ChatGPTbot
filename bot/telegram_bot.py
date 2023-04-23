@@ -70,6 +70,9 @@ class TelegramBot:
         logging.warning(
             f'Request to be converted into audio from {callback.from_user.username} (id: {callback.from_user.id})')
         voice = self.announcer.voicing(callback.message.text, callback.from_user.id)
+        if voice is None:
+            await self.bot.send_message(callback.from_user.id, "Unfortunately, I can't recognize this message")
+            return
         ogg_file = types.InputFile(voice)
 
         await self.bot.send_voice(callback.from_user.id, ogg_file)
