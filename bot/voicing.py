@@ -53,6 +53,7 @@ class Announcer:
 
     def __check_model(self, model_speech: str):
         if not os.path.isfile(model_speech):
+            logging.info(f'Model {model_speech} is missing and will be installed')
             torch.hub.download_url_to_file(self.url_model[model_speech], model_speech)
 
         return model_speech
