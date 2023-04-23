@@ -13,6 +13,8 @@ class Announcer:
         torch.set_num_threads(4)
         self.url_model = {config['ru_model_speech']: 'https://models.silero.ai/models/tts/ru/v3_1_ru.pt',
                           config['en_model_speech']: 'https://models.silero.ai/models/tts/en/v3_en.pt'}
+        self.__check_model(config['ru_model_speech'])
+        self.__check_model(config['en_model_speech'])
         self._config = config
 
     def voicing(self, message: str, chat_id: str):
