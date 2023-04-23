@@ -7,7 +7,7 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import Dispatcher
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ContentType
 from aiogram.utils import executor
-from aiogram.utils.exceptions import MessageNotModified, RetryAfter, CantParseEntities
+from aiogram.utils.exceptions import MessageNotModified, RetryAfter, CantParseEntities, TelegramAPIError
 
 from chatai import GPT
 from voicing import Announcer
@@ -67,18 +67,20 @@ class TelegramBot:
         await self.bot.send_photo(message.from_user.id, url_image)
 
     async def _voicing(self, callback: types.CallbackQuery):
-        logging.warning(
+        logging.info(
             f'Request to be converted into audio from {callback.from_user.username} (id: {callback.from_user.id})')
         await self.bot.send_chat_action(callback.from_user.id, 'record_voice')
-        voice = self.announcer.voicing(callback.message.text, callback.from_user.id)
-        if voice is None:
-            await self.bot.send_message(callback.from_user.id, "Unfortunately, I can't recognize this message")
-            return
-        await self.bot.send_chat_action(callback.from_user.id, 'upload_voice')
-        ogg_file = types.InputFile(voice)
-
-        await self.bot.send_voice(callback.from_user.id, ogg_file)
-        await callback.answer()
+        voices = await self.announcer.voicing(callback.message.text, callback.from_user.id)
+        for voice in voices:
+            if voice is None:
+                await self.bot.send_message(callback.from_user.id, "Unfortunately, I can't recognize this message")
+                return
+            await self.bot.send_chat_action(callback.from_user.id, 'upload_voice')
+            ogg_file = types.InputFile(voice)
+            try:
+                await self.bot.send_voice(callback.from_user.id, ogg_file)
+            except TelegramAPIError as e:
+                logging.warning(e)
 
     async def _start(self, message: types.Message):
         self.gpt.create_user_history(f'{message.from_user.id}', f'@{message.from_user.username}')
