@@ -150,6 +150,7 @@ class GPT:
                 'username': username,
                 'history': [{"role": "system", "content": ""}],
             }, chat_id)
+            logging.info(f"A history file was created for a user {username} (id: {chat_id})")
 
     def __add_to_history(self, history: list, chat_id):
         """
