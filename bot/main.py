@@ -59,7 +59,7 @@ def main():
                      }
 
     telegram_config = {'token_bot': os.environ['TOKEN_TELEGRAM'],
-                       'superuser': os.environ.get('SUPERUSER', '*')}
+                       'allowed_user_ids': os.environ.get('ALLOWED_TELEGRAM_USER_IDS', '*')}
 
     voicing_config = {'ru_model_speech': os.environ.get('RU_MODEL_SPEECH', 'models/ru_v3.pt'),
                       'en_model_speech': os.environ.get('EN_MODEL_SPEECH', 'models/v3_en.pt'),
