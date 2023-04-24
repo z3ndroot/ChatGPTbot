@@ -5,7 +5,7 @@ from aiogram import Bot
 from aiogram import types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import Dispatcher
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ContentType
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ContentType, BotCommand
 from aiogram.utils import executor
 from aiogram.utils.exceptions import MessageNotModified, RetryAfter, CantParseEntities, TelegramAPIError
 
@@ -19,12 +19,22 @@ class TelegramBot:
         self.storage = MemoryStorage()
         self.bot = Bot(token=config["token_bot"])
         self.allowed_user_ids = config['allowed_user_ids']
+        self.bot_command = [
+            BotCommand('clear', 'Cleaning up the conversation '),
+            BotCommand('system_role',
+                       'Provides initial instructions for the model(e.g. /system_role You are a helpful assistant.)'),
+            BotCommand('image', 'Generates an image by prompt (e. g. /image car)'),
+            BotCommand('help', 'Show helo message')
+        ]
         self.dp = Dispatcher(self.bot, storage=self.storage)
         self.in_cor = InlineKeyboardMarkup(row_width=4)
         self.button_clear = InlineKeyboardButton(text="voice", callback_data="voice")
         self.in_cor.add(self.button_clear)
         self.gpt: GPT = gpt
         self.announcer: Announcer = announcer
+
+    async def on_startup(self, dp: Dispatcher):
+        await dp.bot.set_my_commands(self.bot_command)
 
     async def _chat(self, message: types.Message, text: str = None, audio=False):
         """
@@ -127,11 +137,11 @@ class TelegramBot:
         dp.register_message_handler(self._clear_chat, self.allowed_users_filter, commands="clear")
         dp.register_callback_query_handler(self._voicing, self.allowed_users_filter, text="voice")
         dp.register_message_handler(self._get_system_message_for_user, self.allowed_users_filter,
-                                    commands="system_message")
+                                    commands="system_role")
         dp.register_message_handler(self._gen_image, self.allowed_users_filter, commands="image")
         dp.register_message_handler(self._audio_to_chat, self.allowed_users_filter, content_types=ContentType.VOICE)
         dp.register_message_handler(self._message, self.allowed_users_filter)
 
     def run(self):
         self._reg_handler(self.dp)
-        executor.start_polling(self.dp, skip_updates=True)
+        executor.start_polling(self.dp, skip_updates=True, on_startup=self.on_startup)
