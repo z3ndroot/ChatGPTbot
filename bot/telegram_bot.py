@@ -24,7 +24,7 @@ class TelegramBot:
             BotCommand('system_role',
                        'Provides initial instructions for the model(e.g. /system_role You are a helpful assistant.)'),
             BotCommand('image', 'Generates an image by prompt (e. g. /image car)'),
-            BotCommand('help', 'Show helo message')
+            BotCommand('help', 'Show help message'),
         ]
         self.dp = Dispatcher(self.bot, storage=self.storage)
         self.in_cor = InlineKeyboardMarkup(row_width=4)
