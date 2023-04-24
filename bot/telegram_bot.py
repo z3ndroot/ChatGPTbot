@@ -18,6 +18,7 @@ class TelegramBot:
     def __init__(self, config: dict, gpt, announcer):
         self.storage = MemoryStorage()
         self.bot = Bot(token=config["token_bot"])
+        self.allowed_user_ids = config['allowed_user_ids']
         self.dp = Dispatcher(self.bot, storage=self.storage)
         self.in_cor = InlineKeyboardMarkup(row_width=4)
         self.button_clear = InlineKeyboardButton(text="voice", callback_data="voice")
@@ -66,6 +67,17 @@ class TelegramBot:
             return
         await self.bot.send_photo(message.from_user.id, url_image)
 
+    async def allowed_users_filter(self, message: types.Message):
+        if self.allowed_user_ids == '*':
+            self.gpt.create_user_history(f'{message.from_user.id}', f'@{message.from_user.username}')
+            return True
+
+        if str(message.from_user.id) in self.allowed_user_ids.split(','):
+            self.gpt.create_user_history(f'{message.from_user.id}', f'@{message.from_user.username}')
+            return True
+
+        return False
+
     async def _voicing(self, callback: types.CallbackQuery):
         logging.info(
             f'Request to be converted into audio from {callback.from_user.username} (id: {callback.from_user.id})')
@@ -83,7 +95,6 @@ class TelegramBot:
                 logging.warning(e)
 
     async def _start(self, message: types.Message):
-        self.gpt.create_user_history(f'{message.from_user.id}', f'@{message.from_user.username}')
         await self.bot.send_message(message.from_user.id,
                                     f"Hi👋\n{message.from_user.first_name}, please write your question.")
 
@@ -108,18 +119,18 @@ class TelegramBot:
         await self._chat(audio, text, audio=True)
 
     async def _message(self, message: types.Message):
-        self.gpt.create_user_history(f'{message.from_user.id}', f'@{message.from_user.username}')
         logging.info(f"New message received from user @{message.from_user.username} (id: {message.from_user.id})")
         await self._chat(message)
 
     def _reg_handler(self, dp: Dispatcher):
-        dp.register_message_handler(self._start, commands="start")
-        dp.register_message_handler(self._clear_chat, commands="clear")
-        dp.register_callback_query_handler(self._voicing, text="voice")
-        dp.register_message_handler(self._get_system_message_for_user, commands="system_message")
-        dp.register_message_handler(self._gen_image, commands="image")
-        dp.register_message_handler(self._audio_to_chat, content_types=ContentType.VOICE)
-        dp.register_message_handler(self._message)
+        dp.register_message_handler(self._start, self.allowed_users_filter, commands="start")
+        dp.register_message_handler(self._clear_chat, self.allowed_users_filter, commands="clear")
+        dp.register_callback_query_handler(self._voicing, self.allowed_users_filter, text="voice")
+        dp.register_message_handler(self._get_system_message_for_user, self.allowed_users_filter,
+                                    commands="system_message")
+        dp.register_message_handler(self._gen_image, self.allowed_users_filter, commands="image")
+        dp.register_message_handler(self._audio_to_chat, self.allowed_users_filter, content_types=ContentType.VOICE)
+        dp.register_message_handler(self._message, self.allowed_users_filter)
 
     def run(self):
         self._reg_handler(self.dp)
