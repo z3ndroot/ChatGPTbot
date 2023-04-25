@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 from aiogram import Bot
 from aiogram import types
@@ -103,6 +104,8 @@ class TelegramBot:
                 await self.bot.send_voice(callback.from_user.id, ogg_file)
             except TelegramAPIError as e:
                 logging.warning(e)
+            finally:
+                os.remove(voice)
 
     async def _start(self, message: types.Message):
         await self.bot.send_message(message.from_user.id,
@@ -127,6 +130,7 @@ class TelegramBot:
         await self.gpt.convert_audio(chat_id=str(audio.from_user.id))
         text = await self.gpt.transcriptions(chat_id=str(audio.from_user.id))
         await self._chat(audio, text, audio=True)
+        await self.gpt.delete_audio(chat_id=audio.from_user.id)
 
     async def _message(self, message: types.Message):
         logging.info(f"New message received from user @{message.from_user.username} (id: {message.from_user.id})")
