@@ -86,6 +86,10 @@ class GPT:
         data, samplerate = sf.read(ogg_file)
         sf.write(wav_file, data, samplerate)
 
+    async def delete_audio(self, chat_id):
+        os.remove(f"audio/{chat_id}.ogg")
+        os.remove(f"audio/{chat_id}.wav")
+
     async def _get_chat_response(self, message: list[dict]):
         """
         Request a response from the GPT model
