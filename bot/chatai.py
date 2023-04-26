@@ -141,14 +141,29 @@ class GPT:
         return response.choices[0]['message']['content']
 
     def __write_to_file(self, data, chat_id: str):
+        """
+        Writing to the history file
+        :param data: Data with chat history
+        :param chat_id: Telegram chat id
+        """
         with open(f'history/{chat_id}.json', "w", encoding="UTF8") as file:
             json.dump(data, file, indent=4)
 
     def __read_file(self, chat_id: str):
+        """
+        Read history file
+        :param chat_id: Telegram chat id
+        :return: list with chat history
+        """
         with open(f'history/{chat_id}.json', "r", encoding="UTF8") as file:
             return json.load(file)
 
     def create_user_history(self, chat_id, username):
+        """
+        Creating a history file for a new user
+        :param chat_id: Telegram chat id
+        :param username: Telegram username
+        """
         if not os.path.isfile(f'history/{chat_id}.json'):
             self.__write_to_file({
                 'username': username,
@@ -158,20 +173,28 @@ class GPT:
 
     def __add_to_history(self, history: list, chat_id):
         """
-        Функция сохранения истории чата
+        Adding a prompt and response from a model in the history file
+        :param history: chat history list
+        :param chat_id: Telegram chat id
         """
         result = self.__read_file(chat_id)
         result['history'] = history
         self.__write_to_file(result, chat_id)
 
     def system_message(self, message: str, chat_id):
+        """
+        Changing the system role message
+        :param message: system role message
+        :param chat_id: Telegram chat id
+        """
         result = self.__read_file(chat_id)
         result['history'][0].update({"content": message})
         self.__write_to_file(result, chat_id)
 
     def clear_history(self, chat_id: str):
         """
-        Функция очистки истории чата
+        Cleaning the chat history file
+        :param chat_id: Telegram chat id
         """
         result = self.__read_file(chat_id)
         result['history'] = [{"role": "system", "content": ""}]
