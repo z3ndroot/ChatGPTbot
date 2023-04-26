@@ -25,7 +25,7 @@ class TelegramBot:
             BotCommand('system_role',
                        'Provides initial instructions for the model(e.g. /system_role You are a helpful assistant.)'),
             BotCommand('image', 'Generates an image by prompt (e. g. /image car)'),
-            BotCommand('help', 'Show help message'),
+            BotCommand('help', "I'll show you how to use this bot"),
         ]
         self.dp = Dispatcher(self.bot, storage=self.storage)
         self.in_cor = InlineKeyboardMarkup(row_width=4)
@@ -34,8 +34,24 @@ class TelegramBot:
         self.gpt: GPT = gpt
         self.announcer: Announcer = announcer
 
-    async def on_startup(self, dp: Dispatcher):
+    async def _on_startup(self, dp: Dispatcher):
         await dp.bot.set_my_commands(self.bot_command)
+
+    async def _help(self, message: types.Message):
+        commands = [f'/{command.command} - {command.description}' for command in self.bot_command]
+        help_message = "👋Welcome, my friend, to ChatGPT bot!" + \
+                       " I am an intelligent assistant designed to make your life easier," + \
+                       " talk to me Use the following commands to interact with me:" + \
+                       "\n\n" + \
+                       "\n".join(commands) + \
+                       "\n\n" + \
+                       "🗣Send me a voice message and I'll convert it into a message" + \
+                       "\n" + \
+                       "🎧Click the voice button so I can voice my message" + \
+                       "\n\n" + \
+                       "🙋‍♂️Write your question and see what I can do for you today!"
+
+        await self.bot.send_message(message.from_user.id, help_message)
 
     async def _chat(self, message: types.Message, text: str = None, audio=False):
         """
@@ -78,7 +94,7 @@ class TelegramBot:
             return
         await self.bot.send_photo(message.from_user.id, url_image)
 
-    async def allowed_users_filter(self, message: types.Message):
+    async def _allowed_users_filter(self, message: types.Message):
         if self.allowed_user_ids == '*':
             self.gpt.create_user_history(f'{message.from_user.id}', f'@{message.from_user.username}')
             return True
@@ -107,10 +123,6 @@ class TelegramBot:
             finally:
                 os.remove(voice)
 
-    async def _start(self, message: types.Message):
-        await self.bot.send_message(message.from_user.id,
-                                    f"Hi👋\n{message.from_user.first_name}, please write your question.")
-
     async def _clear_chat(self, message: types.Message):
         """
         Обработка кнопки Clear
@@ -137,15 +149,16 @@ class TelegramBot:
         await self._chat(message)
 
     def _reg_handler(self, dp: Dispatcher):
-        dp.register_message_handler(self._start, self.allowed_users_filter, commands="start")
-        dp.register_message_handler(self._clear_chat, self.allowed_users_filter, commands="clear")
-        dp.register_callback_query_handler(self._voicing, self.allowed_users_filter, text="voice")
-        dp.register_message_handler(self._get_system_message_for_user, self.allowed_users_filter,
+        dp.register_message_handler(self._help, self._allowed_users_filter, commands="start")
+        dp.register_message_handler(self._help, self._allowed_users_filter, commands="help")
+        dp.register_message_handler(self._clear_chat, self._allowed_users_filter, commands="clear")
+        dp.register_callback_query_handler(self._voicing, self._allowed_users_filter, text="voice")
+        dp.register_message_handler(self._get_system_message_for_user, self._allowed_users_filter,
                                     commands="system_role")
-        dp.register_message_handler(self._gen_image, self.allowed_users_filter, commands="image")
-        dp.register_message_handler(self._audio_to_chat, self.allowed_users_filter, content_types=ContentType.VOICE)
-        dp.register_message_handler(self._message, self.allowed_users_filter)
+        dp.register_message_handler(self._gen_image, self._allowed_users_filter, commands="image")
+        dp.register_message_handler(self._audio_to_chat, self._allowed_users_filter, content_types=ContentType.VOICE)
+        dp.register_message_handler(self._message, self._allowed_users_filter)
 
     def run(self):
         self._reg_handler(self.dp)
-        executor.start_polling(self.dp, skip_updates=True, on_startup=self.on_startup)
+        executor.start_polling(self.dp, skip_updates=True, on_startup=self._on_startup)
