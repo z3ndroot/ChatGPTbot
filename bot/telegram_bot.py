@@ -62,7 +62,7 @@ class TelegramBot:
         counter = 0
         waiting = await message.reply("...")
         await self.bot.send_chat_action(message.from_user.id, "typing")
-        async for i in self.gpt.create_chat(text, chat_id=str(message.from_user.id)):
+        async for i in self.gpt.create_chat_stream(text, chat_id=str(message.from_user.id)):
             try:
                 if 'not_finished' in i and counter % 10 == 0:
                     await waiting.edit_text(i[0])
