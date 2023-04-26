@@ -12,10 +12,10 @@ class Announcer:
     def __init__(self, config: dict):
         self.device = torch.device(config['device'])
         torch.set_num_threads(4)
-        self.url_model = {config['ru_model_speech']: 'https://models.silero.ai/models/tts/ru/v3_1_ru.pt',
-                          config['en_model_speech']: 'https://models.silero.ai/models/tts/en/v3_en.pt'}
-        self.__check_model(config['ru_model_speech'])
-        self.__check_model(config['en_model_speech'])
+        self.url_model = {f"models/{config['ru_model_speech']}": 'https://models.silero.ai/models/tts/ru/v3_1_ru.pt',
+                          f"models/{config['en_model_speech']}": 'https://models.silero.ai/models/tts/en/v3_en.pt'}
+        self.__check_model(f"models/{config['ru_model_speech']}")
+        self.__check_model(f"models/{config['en_model_speech']}")
         self._config = config
 
     async def voicing(self, message: str, chat_id: str):
@@ -30,7 +30,7 @@ class Announcer:
             if detect(message) == "ru":
                 path_voice = await self.__speak_text(
                     message=self.__translit(chunk),
-                    local_file=self.__check_model(self._config['ru_model_speech']),
+                    local_file=self.__check_model(f"models/{self._config['ru_model_speech']}"),
                     speaker=self._config['ru_speaker'],
                     filename=f'{chat_id}_{n}'
                 )
@@ -40,7 +40,7 @@ class Announcer:
             if detect(message) == "en":
                 path_voice = await self.__speak_text(
                     message=chunk,
-                    local_file=self.__check_model(self._config['en_model_speech']),
+                    local_file=self.__check_model(f"models/{self._config['en_model_speech']}"),
                     speaker=self._config['en_speaker'],
                     filename=f'{chat_id}_{n}'
                 )
