@@ -17,6 +17,12 @@ from voicing import Announcer
 class TelegramBot:
 
     def __init__(self, config: dict, gpt, announcer):
+        """
+        Bot initialization with the given configuration, gpt object and announcer object
+        :param config: dictionary with bot configurations
+        :param gpt: GPT object
+        :param announcer: Announcer object
+        """
         self.storage = MemoryStorage()
         self.bot = Bot(token=config["token_bot"])
         self.allowed_user_ids = config['allowed_user_ids']
@@ -36,9 +42,15 @@ class TelegramBot:
         self.config = config
 
     async def _on_startup(self, dp: Dispatcher):
+        """
+        Run when the bot starts, sends a set of commands
+        """
         await dp.bot.set_my_commands(self.bot_command)
 
     async def _help(self, message: types.Message):
+        """
+        Shows the help menu.
+        """
         commands = [f'/{command.command} - {command.description}' for command in self.bot_command]
         help_message = "👋Welcome, my friend, to ChatGPT bot!" + \
                        " I am an intelligent assistant designed to make your life easier," + \
@@ -56,7 +68,7 @@ class TelegramBot:
 
     async def _chat(self, message: types.Message, text: str = None, audio=False):
         """
-        Функция для обработки сообщений от пользователя
+        Sending a model response by user message
         """
 
         text = message.text if not audio else text
@@ -89,6 +101,9 @@ class TelegramBot:
                 await message.reply(answer, reply_markup=self.in_cor)
 
     async def _gen_image(self, message: types.Message):
+        """
+        Sending an image from the model at the user's request
+        """
         logging.info(f"New prompt generate image from @{message.from_user.username} (id: {message.from_user.id})")
         prompt = message.text.replace("/image", "")
 
@@ -115,6 +130,9 @@ class TelegramBot:
         return False
 
     async def _voicing(self, callback: types.CallbackQuery):
+        """
+        Processing the inline button and sending the generated voice
+        """
         logging.info(
             f'Request to be converted into audio from {callback.from_user.username} (id: {callback.from_user.id})')
         await self.bot.send_chat_action(callback.from_user.id, 'record_voice')
@@ -134,18 +152,24 @@ class TelegramBot:
 
     async def _clear_chat(self, message: types.Message):
         """
-        Обработка кнопки Clear
+        Clear command processing
         """
         logging.info(f"Clear history from @{message.from_user.username} (id: {message.from_user.id})")
         self.gpt.clear_history(chat_id=str(message.from_user.id))
         await self.bot.send_message(message.from_user.id, "History brushed off✅")
 
     async def _get_system_message_for_user(self, message: types.Message):
+        """
+        Processing the system_role command
+        """
         text = message.text.replace("/system_message", "")
         self.gpt.system_message(text, chat_id=str(message.from_user.id))
         await self.bot.send_message(message.from_user.id, "Complete✅")
 
     async def _audio_to_chat(self, audio: types.Message):
+        """
+        Voice message processing
+        """
         logging.info(f"New audio received from user @{audio.from_user.username} (id: {audio.from_user.id})")
         await audio.voice.download(destination_file=f'audio/{audio.from_user.id}.ogg')
         await self.gpt.convert_audio(chat_id=str(audio.from_user.id))
@@ -154,10 +178,16 @@ class TelegramBot:
         await self.gpt.delete_audio(chat_id=audio.from_user.id)
 
     async def _message(self, message: types.Message):
+        """
+        Processing text messages
+        """
         logging.info(f"New message received from user @{message.from_user.username} (id: {message.from_user.id})")
         await self._chat(message)
 
     def _reg_handler(self, dp: Dispatcher):
+        """
+        registration of message handlers
+        """
         dp.register_message_handler(self._help, self._allowed_users_filter, commands="start")
         dp.register_message_handler(self._help, self._allowed_users_filter, commands="help")
         dp.register_message_handler(self._clear_chat, self._allowed_users_filter, commands="clear")
@@ -169,5 +199,8 @@ class TelegramBot:
         dp.register_message_handler(self._message, self._allowed_users_filter)
 
     def run(self):
+        """
+        bot startup
+        """
         self._reg_handler(self.dp)
         executor.start_polling(self.dp, skip_updates=True, on_startup=self._on_startup)
