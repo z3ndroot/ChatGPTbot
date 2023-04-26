@@ -183,7 +183,7 @@ class GPT:
         if not os.path.isfile(f'history/{chat_id}.json'):
             self.__write_to_file({
                 'username': username,
-                'history': [{"role": "system", "content": ""}],
+                'history': [{"role": "system", "content": "You are a helpful assistant."}],
             }, chat_id)
             logging.info(f"A history file was created for a user {username} (id: {chat_id})")
 
