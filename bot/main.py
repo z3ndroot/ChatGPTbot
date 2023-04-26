@@ -60,8 +60,8 @@ def main():
                        'allowed_user_ids': os.environ.get('ALLOWED_TELEGRAM_USER_IDS', '*'),
                        'stream': os.environ.get('STREAM', 'true').lower() == "true"}
 
-    voicing_config = {'ru_model_speech': os.environ.get('RU_MODEL_SPEECH', 'models/ru_v3.pt'),
-                      'en_model_speech': os.environ.get('EN_MODEL_SPEECH', 'models/v3_en.pt'),
+    voicing_config = {'ru_model_speech': os.environ.get('RU_MODEL_SPEECH', 'ru_v3.pt'),
+                      'en_model_speech': os.environ.get('EN_MODEL_SPEECH', 'v3_en.pt'),
                       'ru_speaker': os.environ.get('RU_SPEAKER', 'baya'),
                       'en_speaker': os.environ.get('EN_SPEAKER', 'en_1'),
                       'sample_rate': int(os.environ.get('SAMPLE_RATE', 48000)),
