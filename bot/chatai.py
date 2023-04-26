@@ -13,6 +13,21 @@ class GPT:
         openai.api_key = config["token_openai"]
         self._config = config
 
+    async def create_chat(self, message: str, chat_id: str):
+        """
+        Gets a full response from the GPT model.
+        :param message: Message from user
+        :param chat_id: Telegram chat id
+        :return: The answer from the model
+        """
+        response = await self._generate_gpt_response(message, chat_id, stream=False)
+        answer = response.choices[0]['message']['content'].strip()
+        history = self.__read_file(chat_id)['history']
+        history.append({"role": "assistant", "content": answer})
+        self.__add_to_history(history, chat_id)
+
+        return answer
+
     async def create_chat_stream(self, message: str, chat_id: str):
         """
         Stream response from the GTP model
@@ -60,7 +75,7 @@ class GPT:
             messages=history,
             temperature=self._config["temperature"],
             max_tokens=self._config["max_tokens"],
-            n=self._config["n_choices"],
+            n=1,
             presence_penalty=self._config["presence_penalty"],
             frequency_penalty=self._config["frequency_penalty"],
             stream=stream)
