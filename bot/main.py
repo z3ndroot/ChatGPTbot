@@ -56,6 +56,7 @@ def main():
                      'temperature': float(os.environ.get('TEMPERATURE', 1.0)),
                      'presence_penalty': float(os.environ.get('PRESENCE_PENALTY', 0.0)),
                      'frequency_penalty': float(os.environ.get('FREQUENCY_PENALTY', 0.0)),
+                     'stream': os.environ.get('STREAM', 'true'),
                      }
 
     telegram_config = {'token_bot': os.environ['TOKEN_TELEGRAM'],
