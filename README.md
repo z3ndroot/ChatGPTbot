@@ -24,8 +24,8 @@ Set up the configuration by copying `.env.example` and renaming it to `.env`.
 
 | Parameter                   | Description                                                                                                                                                                                                  |
 |-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `OPENAI_API_KEY`            | OpenAI API key, you can get it from [here](https://platform.openai.com/account/api-keys)                                                                                                                     |
-| `TELEGRAM_BOT_TOKEN`        | Telegram bot's token, obtained using [BotFather](http://t.me/botfather) (see [tutorial](https://core.telegram.org/bots/tutorial#obtain-your-bot-token))                                                      |
+| `TOKEN_OPENAI`            | OpenAI API key, you can get it from [here](https://platform.openai.com/account/api-keys)                                                                                                                     |
+| `TOKEN_TELEGRAM`        | Telegram bot's token, obtained using [BotFather](http://t.me/botfather) (see [tutorial](https://core.telegram.org/bots/tutorial#obtain-your-bot-token))                                                      |
 | `ALLOWED_TELEGRAM_USER_IDS` | A comma-separated list of Telegram user IDs that are allowed to interact with the bot (use [@getmyid_bot](https://t.me/getmyid_bot) to find your user ID). **Note**: by default, *everyone* is allowed (`*`) |
 
 #### Additional optional configuration options
