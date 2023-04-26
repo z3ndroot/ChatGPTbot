@@ -13,17 +13,37 @@ class GPT:
         openai.api_key = config["token_openai"]
         self._config = config
 
-    async def create_chat(self, message: list, chat_id: str):
+    async def create_chat_stream(self, message: str, chat_id: str):
         """
         Stream response from the GTP model
         :param message: Message from user
         :param chat_id: Telegram chat id
         :return: The answer from the model or 'not_finished'
         """
+        response = await self._generate_gpt_response(message, chat_id, stream=True)
+        answer = ''
+        async for item in response:
+            if 'choices' not in item or len(item.choices) == 0:
+                continue
+            delta = item.choices[0].delta
+            if 'content' in delta:
+                answer += delta.content
+                yield answer, 'not_finished'
+        answer = answer.strip()
+        history = self.__read_file(chat_id)['history']
+        history.append({"role": "assistant", "content": answer})
+        self.__add_to_history(history, chat_id)
+        yield answer
+
+    async def _generate_gpt_response(self, message, chat_id, stream=True):
+        """
+        Request a response from the GPT model
+        :param message: The message to send to the model
+        :return: The response from the model
+        """
         history = self.__read_file(chat_id)['history']
         history.append({"role": "user", "content": message})
         token_len = self.num_tokens_from_messages(history)
-        answer = ''
         if token_len + self._config['max_tokens'] > self._config['max_all_tokens']:
             logging.warning(
                 f"This model's maximum context length is 4097 tokens."
@@ -33,20 +53,17 @@ class GPT:
             history = self.__read_file(chat_id)['history']
             history.append({"role": "assistant", "content": summarize})
             history.append({"role": "user", "content": message})
-
-        response = await self._get_chat_response(history)
-
-        async for item in response:
-            if 'choices' not in item or len(item.choices) == 0:
-                continue
-            delta = item.choices[0].delta
-            if 'content' in delta:
-                answer += delta.content
-                yield answer, 'not_finished'
-        answer = answer.strip()
-        history.append({"role": "assistant", "content": answer})
         self.__add_to_history(history, chat_id)
-        yield answer
+
+        return await openai.ChatCompletion.acreate(
+            model=self._config["model"],
+            messages=history,
+            temperature=self._config["temperature"],
+            max_tokens=self._config["max_tokens"],
+            n=self._config["n_choices"],
+            presence_penalty=self._config["presence_penalty"],
+            frequency_penalty=self._config["frequency_penalty"],
+            stream=stream)
 
     async def generate_image(self, prompt: str):
         """
@@ -89,22 +106,6 @@ class GPT:
     async def delete_audio(self, chat_id):
         os.remove(f"audio/{chat_id}.ogg")
         os.remove(f"audio/{chat_id}.wav")
-
-    async def _get_chat_response(self, message: list[dict]):
-        """
-        Request a response from the GPT model
-        :param message: The message to send to the model
-        :return: The response from the model
-        """
-        return await openai.ChatCompletion.acreate(
-            model=self._config["model"],
-            messages=message,
-            temperature=self._config["temperature"],
-            max_tokens=self._config["max_tokens"],
-            n=self._config["n_choices"],
-            presence_penalty=self._config["presence_penalty"],
-            frequency_penalty=self._config["frequency_penalty"],
-            stream=True)
 
     def num_tokens_from_messages(self, messages, model="gpt-3.5-turbo-0301"):
         """Returns the number of tokens used by a list of messages."""
