@@ -19,11 +19,17 @@ class Announcer:
         self._config = config
 
     async def voicing(self, message: str, chat_id: str):
+        """
+        Getting the path to the model-generated file
+        :param message: Message from the model
+        :param chat_id: Telegram chat id
+        :return: the path to the voice message
+        """
         path_audio = []
         if detect(message) not in ('ru', 'en'):
             logging.warning('Message language not recognized')
             return
-        chunks = [message[i:i + 900] for i in range(0, len(message), 900)]
+        chunks = [message[i:i + 900] for i in range(0, len(message), 900)]  # Breaking up the text into chunks
 
         for n, chunk in enumerate(chunks):
 
@@ -49,6 +55,14 @@ class Announcer:
         return path_audio
 
     async def __speak_text(self, message: str, local_file: str, speaker: str, filename: str):
+        """
+        Converting text to a voice
+        :param message: message for voicing
+        :param local_file: path to the file with the model
+        :param speaker: voiceover
+        :param filename: file names to save
+        :return: the path to the voice message
+        """
         model = torch.package.PackageImporter(local_file).load_pickle('tts_models', 'model')
         model.to(self.device)
         audio_paths = await asyncio.to_thread(
@@ -62,6 +76,9 @@ class Announcer:
         return audio_paths
 
     def __check_model(self, model_speech: str):
+        """
+        Check for model file
+        """
         if not os.path.isfile(model_speech):
             logging.info(f'Model {model_speech} is missing and will be installed')
             torch.hub.download_url_to_file(self.url_model[model_speech], model_speech)
@@ -69,4 +86,7 @@ class Announcer:
         return model_speech
 
     def __translit(self, text: str):
+        """
+        Replacing English letters with Russian letters for the model
+        """
         return translit(text, 'ru')
