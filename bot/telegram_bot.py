@@ -8,7 +8,7 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import Dispatcher
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ContentType, BotCommand
 from aiogram.utils import executor
-from aiogram.utils.exceptions import MessageNotModified, RetryAfter, CantParseEntities, TelegramAPIError
+from aiogram.utils.exceptions import RetryAfter, CantParseEntities, TelegramAPIError
 
 from chatai import GPT
 from voicing import Announcer
@@ -33,6 +33,7 @@ class TelegramBot:
         self.in_cor.add(self.button_clear)
         self.gpt: GPT = gpt
         self.announcer: Announcer = announcer
+        self.config = config
 
     async def _on_startup(self, dp: Dispatcher):
         await dp.bot.set_my_commands(self.bot_command)
@@ -57,27 +58,35 @@ class TelegramBot:
         """
         Функция для обработки сообщений от пользователя
         """
-        if not audio:
-            text = message.text
-        counter = 0
-        waiting = await message.reply("...")
-        await self.bot.send_chat_action(message.from_user.id, "typing")
-        async for i in self.gpt.create_chat_stream(text, chat_id=str(message.from_user.id)):
+
+        text = message.text if not audio else text
+        if self.config['stream']:
+            counter = 0
+            waiting = await message.reply("...")
+            await self.bot.send_chat_action(message.from_user.id, "typing")
+            async for i in self.gpt.create_chat_stream(text, chat_id=str(message.from_user.id)):
+                try:
+                    if 'not_finished' in i and counter % 10 == 0:
+                        await waiting.edit_text(i[0])
+                    elif isinstance(i, str):
+                        await waiting.edit_text(i, reply_markup=self.in_cor, parse_mode=types.ParseMode.MARKDOWN)
+                except RetryAfter as e:
+                    logging.warning(e)
+                    await asyncio.sleep(e.timeout)
+                except CantParseEntities as e:
+                    logging.warning(e)
+                    await waiting.edit_text(i, reply_markup=self.in_cor)
+                counter += 1
+                await asyncio.sleep(0.01)
+        else:
+            await self.bot.send_chat_action(message.from_user.id, 'typing')
+
+            answer = await self.gpt.create_chat(text, message.from_user.id)
             try:
-                if 'not_finished' in i and counter % 10 == 0:
-                    await waiting.edit_text(i[0])
-                elif isinstance(i, str):
-                    await waiting.edit_text(i, reply_markup=self.in_cor, parse_mode=types.ParseMode.MARKDOWN)
-            except MessageNotModified as e:
-                logging.warning(e)
-            except RetryAfter as e:
-                logging.warning(e)
-                await asyncio.sleep(e.timeout)
+                await message.reply(answer, reply_markup=self.in_cor, parse_mode=types.ParseMode.MARKDOWN)
             except CantParseEntities as e:
                 logging.warning(e)
-                await waiting.edit_text(i, reply_markup=self.in_cor)
-            counter += 1
-            await asyncio.sleep(0.01)
+                await message.reply(answer, reply_markup=self.in_cor)
 
     async def _gen_image(self, message: types.Message):
         logging.info(f"New prompt generate image from @{message.from_user.username} (id: {message.from_user.id})")
