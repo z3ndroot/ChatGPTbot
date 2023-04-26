@@ -85,8 +85,7 @@ class TelegramBot:
                 except RetryAfter as e:
                     logging.warning(e)
                     await asyncio.sleep(e.timeout)
-                except CantParseEntities as e:
-                    logging.warning(e)
+                except CantParseEntities:
                     await waiting.edit_text(i, reply_markup=self.in_cor)
                 counter += 1
                 await asyncio.sleep(0.01)
