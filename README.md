@@ -62,7 +62,7 @@ Clone the repository and navigate to the project directory:
 
 ```shell
 git clone https://github.com/z3ndroot/ChatGPTbot
-cd chatgpt-telegram-bot
+cd ChatGPTbot
 ```
 
 #### From Source
