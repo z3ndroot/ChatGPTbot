@@ -99,6 +99,13 @@ class TelegramBot:
                 logging.warning(e)
                 await message.reply(answer, reply_markup=self.in_cor)
 
+    async def error_handler(self, update: types.Update, exception):
+        """
+        Error handler in the aiogram library
+        """
+        logging.error(f'Caused by the update error: {exception}')
+        return True
+
     async def _gen_image(self, message: types.Message):
         """
         Sending an image from the model at the user's request
@@ -196,6 +203,7 @@ class TelegramBot:
         dp.register_message_handler(self._gen_image, self._allowed_users_filter, commands="image")
         dp.register_message_handler(self._audio_to_chat, self._allowed_users_filter, content_types=ContentType.VOICE)
         dp.register_message_handler(self._message, self._allowed_users_filter)
+        dp.register_errors_handler(self.error_handler)
 
     def run(self):
         """
