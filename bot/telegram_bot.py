@@ -12,6 +12,7 @@ from aiogram.utils.exceptions import RetryAfter, CantParseEntities, TelegramAPIE
 
 from chatai import GPT
 from voicing import Announcer
+from openai.error import RateLimitError
 
 
 class TelegramBot:
@@ -72,46 +73,51 @@ class TelegramBot:
         """
         await self.bot.send_chat_action(message.from_user.id, "typing")
         text = message.text if not audio else text
-        if self.config['stream']:
-            counter = 0
-            is_new_message_sent = 0
-            content = await message.reply("...")
-            stream_response = self.gpt.create_chat_stream(text, chat_id=str(message.from_user.id))
-            async for response, tag in stream_response:
-                chunks = self.__text_into_chunks(response)  # splits the text into chunks
-                chunk = chunks[-1]
-                if len(chunks) > 1 and is_new_message_sent == 0:
+        try:
+            if self.config['stream']:
+                counter = 0
+                is_new_message_sent = 0
+                content = await message.reply("...")
+                stream_response = self.gpt.create_chat_stream(text, chat_id=str(message.from_user.id))
+                async for response, tag in stream_response:
+                    chunks = self.__text_into_chunks(response)  # splits the text into chunks
+                    chunk = chunks[-1]
+                    if len(chunks) > 1 and is_new_message_sent == 0:
+                        try:
+                            await content.edit_text(chunks[0], reply_markup=self.in_cor,
+                                                    parse_mode=types.ParseMode.MARKDOWN)
+                        except CantParseEntities:
+                            await content.edit_text(chunk[0], reply_markup=self.in_cor)
+                        content = await message.reply("...")
+                        is_new_message_sent += 1
+                        counter = 0
                     try:
-                        await content.edit_text(chunks[0], reply_markup=self.in_cor,
-                                                parse_mode=types.ParseMode.MARKDOWN)
+                        if not tag and counter % 60 == 0:
+                            await content.edit_text(chunk)
+                        elif tag:
+                            await content.edit_text(chunk, reply_markup=self.in_cor,
+                                                    parse_mode=types.ParseMode.MARKDOWN)
+
+                    except RetryAfter as e:
+                        logging.warning(e)
+                        await asyncio.sleep(e.timeout)
                     except CantParseEntities:
-                        await content.edit_text(chunk[0], reply_markup=self.in_cor)
-                    content = await message.reply("...")
-                    is_new_message_sent += 1
-                    counter = 0
-                try:
-                    if not tag and counter % 60 == 0:
-                        await content.edit_text(chunk)
-                    elif tag:
-                        await content.edit_text(chunk, reply_markup=self.in_cor, parse_mode=types.ParseMode.MARKDOWN)
+                        await content.edit_text(chunk, reply_markup=self.in_cor)
+                    counter += 1
+                    await asyncio.sleep(0.01)
+            else:
 
-                except RetryAfter as e:
-                    logging.warning(e)
-                    await asyncio.sleep(e.timeout)
-                except CantParseEntities:
-                    await content.edit_text(chunk, reply_markup=self.in_cor)
-                counter += 1
-                await asyncio.sleep(0.01)
-        else:
+                answer = await self.gpt.create_chat(text, message.from_user.id)
+                chunks = self.__text_into_chunks(answer)
 
-            answer = await self.gpt.create_chat(text, message.from_user.id)
-            chunks = self.__text_into_chunks(answer)
-
-            for chunk in chunks:
-                try:
-                    await message.reply(chunk, reply_markup=self.in_cor, parse_mode=types.ParseMode.MARKDOWN)
-                except CantParseEntities as e:
-                    await message.reply(chunk, reply_markup=self.in_cor)
+                for chunk in chunks:
+                    try:
+                        await message.reply(chunk, reply_markup=self.in_cor, parse_mode=types.ParseMode.MARKDOWN)
+                    except CantParseEntities as e:
+                        await message.reply(chunk, reply_markup=self.in_cor)
+        except RateLimitError as e:
+            logging.error(f'Errors when sending opeanai request: {e}')
+            await self.bot.send_message(message.from_user.id, f"Error when requesting: {e}")
 
     async def error_handler(self, update: types.Update, exception):
         """
