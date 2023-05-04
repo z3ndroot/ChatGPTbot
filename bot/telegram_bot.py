@@ -70,34 +70,48 @@ class TelegramBot:
         """
         Sending a model response by user message
         """
-
+        await self.bot.send_chat_action(message.from_user.id, "typing")
         text = message.text if not audio else text
         if self.config['stream']:
             counter = 0
-            waiting = await message.reply("...")
-            await self.bot.send_chat_action(message.from_user.id, "typing")
-            async for i in self.gpt.create_chat_stream(text, chat_id=str(message.from_user.id)):
+            is_new_message_sent = 0
+            content = await message.reply("...")
+            stream_response = self.gpt.create_chat_stream(text, chat_id=str(message.from_user.id))
+            async for response, tag in stream_response:
+                chunks = self.__text_into_chunks(response)  # splits the text into chunks
+                chunk = chunks[-1]
+                if len(chunks) > 1 and is_new_message_sent == 0:
+                    try:
+                        await content.edit_text(chunks[0], reply_markup=self.in_cor,
+                                                parse_mode=types.ParseMode.MARKDOWN)
+                    except CantParseEntities:
+                        await content.edit_text(chunk[0], reply_markup=self.in_cor)
+                    content = await message.reply("...")
+                    is_new_message_sent += 1
+                    counter = 0
                 try:
-                    if 'not_finished' in i and counter % 10 == 0:
-                        await waiting.edit_text(i[0])
-                    elif isinstance(i, str):
-                        await waiting.edit_text(i, reply_markup=self.in_cor, parse_mode=types.ParseMode.MARKDOWN)
+                    if not tag and counter % 60 == 0:
+                        await content.edit_text(chunk)
+                    elif tag:
+                        await content.edit_text(chunk, reply_markup=self.in_cor, parse_mode=types.ParseMode.MARKDOWN)
+
                 except RetryAfter as e:
                     logging.warning(e)
                     await asyncio.sleep(e.timeout)
                 except CantParseEntities:
-                    await waiting.edit_text(i, reply_markup=self.in_cor)
+                    await content.edit_text(chunk, reply_markup=self.in_cor)
                 counter += 1
                 await asyncio.sleep(0.01)
         else:
-            await self.bot.send_chat_action(message.from_user.id, 'typing')
 
             answer = await self.gpt.create_chat(text, message.from_user.id)
-            try:
-                await message.reply(answer, reply_markup=self.in_cor, parse_mode=types.ParseMode.MARKDOWN)
-            except CantParseEntities as e:
-                logging.warning(e)
-                await message.reply(answer, reply_markup=self.in_cor)
+            chunks = self.__text_into_chunks(answer)
+
+            for chunk in chunks:
+                try:
+                    await message.reply(chunk, reply_markup=self.in_cor, parse_mode=types.ParseMode.MARKDOWN)
+                except CantParseEntities as e:
+                    await message.reply(chunk, reply_markup=self.in_cor)
 
     async def error_handler(self, update: types.Update, exception):
         """
@@ -189,6 +203,9 @@ class TelegramBot:
         """
         logging.info(f"New message received from user @{message.from_user.username} (id: {message.from_user.id})")
         await self._chat(message)
+
+    def __text_into_chunks(self, text: str, split_size: int = 4096) -> list[str]:
+        return [text[i:i + split_size] for i in range(0, len(text), split_size)]
 
     def _reg_handler(self, dp: Dispatcher):
         """
