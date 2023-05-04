@@ -43,12 +43,12 @@ class GPT:
             delta = item.choices[0].delta
             if 'content' in delta:
                 answer += delta.content
-                yield answer, 'not_finished'
+                yield answer, False
         answer = answer.strip()
         history = self.__read_file(chat_id)['history']
         history.append({"role": "assistant", "content": answer})
         self.__add_to_history(history, chat_id)
-        yield answer
+        yield answer, True
 
     async def _generate_gpt_response(self, message, chat_id, stream=True):
         """
