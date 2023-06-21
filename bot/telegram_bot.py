@@ -81,6 +81,8 @@ class TelegramBot:
                 stream_response = self.gpt.create_chat_stream(text, chat_id=str(message.from_user.id))
                 async for response, tag in stream_response:
                     chunks = self.__text_into_chunks(response)  # splits the text into chunks
+                    if len(chunks) == 0:
+                        continue
                     chunk = chunks[-1]
                     if len(chunks) > 1 and is_new_message_sent == 0:
                         try:
