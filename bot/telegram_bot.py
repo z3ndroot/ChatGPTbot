@@ -89,7 +89,7 @@ class TelegramBot:
                             await content.edit_text(chunks[0], reply_markup=self.in_cor,
                                                     parse_mode=types.ParseMode.MARKDOWN)
                         except CantParseEntities:
-                            await content.edit_text(chunk[0], reply_markup=self.in_cor)
+                            await content.edit_text(chunks[0], reply_markup=self.in_cor)
                         content = await message.reply("...")
                         is_new_message_sent += 1
                         counter = 0
