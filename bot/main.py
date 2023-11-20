@@ -47,6 +47,7 @@ def main():
 
     # Setup configurations
     openai_config = {"token_openai": os.environ['TOKEN_OPENAI'],
+                     'proxy':os.environ.get('PROXY', None),
                      'model': os.environ.get('MODEL', 'gpt-3.5-turbo-0301'),
                      'image_size': os.environ.get('IMAGE_SIZE', '512x512'),
                      'max_tokens': int(os.environ.get('MAX_TOKENS', 1200)),

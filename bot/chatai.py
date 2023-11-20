@@ -11,6 +11,7 @@ import os
 class GPT:
     def __init__(self, config: dict):
         openai.api_key = config["token_openai"]
+        openai.proxy = config['proxy']
         self._config = config
 
     async def create_chat(self, message: str, chat_id: str):

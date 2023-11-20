@@ -40,6 +40,7 @@ Set up the configuration by copying `.env.example` and renaming it to `.env`.
 | `PRESENCE_PENALTY`  | Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far      | `0.0`           |
 | `FREQUENCY_PENALTY` | Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far | `0.0`           |
 | `IMAGE_SIZE`        | The DALL·E generated image size. Allowed values: `256x256`, `512x512` or `1024x1024`                                  | `512x512`       |
+| `PROXY`             | Proxy to be used for OpenAI and Telegram bot (e.g. `http://localhost:8080`)                                           | `None`          |
 
 Check out the [official API reference](https://platform.openai.com/docs/api-reference/chat) for more details.
 
