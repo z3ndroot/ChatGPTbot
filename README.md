@@ -24,23 +24,24 @@ Set up the configuration by copying `.env.example` and renaming it to `.env`.
 
 | Parameter                   | Description                                                                                                                                                                                                  |
 |-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `TOKEN_OPENAI`            | OpenAI API key, you can get it from [here](https://platform.openai.com/account/api-keys)                                                                                                                     |
-| `TOKEN_TELEGRAM`        | Telegram bot's token, obtained using [BotFather](http://t.me/botfather) (see [tutorial](https://core.telegram.org/bots/tutorial#obtain-your-bot-token))                                                      |
+| `TOKEN_OPENAI`              | OpenAI API key, you can get it from [here](https://platform.openai.com/account/api-keys)                                                                                                                     |
+| `TOKEN_TELEGRAM`            | Telegram bot's token, obtained using [BotFather](http://t.me/botfather) (see [tutorial](https://core.telegram.org/bots/tutorial#obtain-your-bot-token))                                                      |
 | `ALLOWED_TELEGRAM_USER_IDS` | A comma-separated list of Telegram user IDs that are allowed to interact with the bot (use [@getmyid_bot](https://t.me/getmyid_bot) to find your user ID). **Note**: by default, *everyone* is allowed (`*`) |
 
 #### Additional optional configuration options
 
-| Parameter           | Description                                                                                                           | Default value   |
-|---------------------|-----------------------------------------------------------------------------------------------------------------------|-----------------|
-| `MODEL`             | The OpenAI model to use for generating responses                                                                      | `gpt-3.5-turbo` |
-| `STREAM`            | Whether to stream responses.                                                                                          | `true`          |
-| `MAX_TOKENS`        | Upper bound on how many tokens the ChatGPT API will return                                                            | `1200`          |
-| `MAX_ALL_TOKENS`    | Maximum value of history size in tokens                                                                               | `4097`          |
-| `TEMPERATURE`       | Number between 0 and 2. Higher values will make the output more random                                                | `1.0`           |
-| `PRESENCE_PENALTY`  | Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far      | `0.0`           |
-| `FREQUENCY_PENALTY` | Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far | `0.0`           |
-| `IMAGE_SIZE`        | The DALL·E generated image size. Allowed values: `256x256`, `512x512` or `1024x1024`                                  | `512x512`       |
-| `PROXY`             | Proxy to be used for OpenAI and Telegram bot (e.g. `http://localhost:8080`)                                           | `None`          |
+| Parameter           | Description                                                                                                           | Default value               |
+|---------------------|-----------------------------------------------------------------------------------------------------------------------|-----------------------------|
+| `MODEL`             | The OpenAI model to use for generating responses                                                                      | `gpt-3.5-turbo`             |
+| `STREAM`            | Whether to stream responses.                                                                                          | `true`                      |
+| `MAX_TOKENS`        | Upper bound on how many tokens the ChatGPT API will return                                                            | `1200`                      |
+| `MAX_ALL_TOKENS`    | Maximum value of history size in tokens                                                                               | `4097`                      |
+| `TEMPERATURE`       | Number between 0 and 2. Higher values will make the output more random                                                | `1.0`                       |
+| `PRESENCE_PENALTY`  | Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far      | `0.0`                       |
+| `FREQUENCY_PENALTY` | Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far | `0.0`                       |
+| `IMAGE_SIZE`        | The DALL·E generated image size. Allowed values: `256x256`, `512x512` or `1024x1024`                                  | `512x512`                   |
+| `PROXY`             | Proxy to be used for OpenAI and Telegram bot (e.g. `http://localhost:8080`)                                           | `None`                      |
+| `BASE_API`          | It is used to specify the endpoint for the API request                                                                | `https://api.openai.com/v1` |
 
 Check out the [official API reference](https://platform.openai.com/docs/api-reference/chat) for more details.
 
