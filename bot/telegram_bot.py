@@ -71,10 +71,10 @@ class TelegramBot:
         """
         Sending a model response by user message
         """
-        await self.bot.send_chat_action(message.from_user.id, "typing")
         text = message.text if not audio else text
         try:
             if self.config['stream']:
+                await self.bot.send_chat_action(message.from_user.id, "typing")
                 counter = 0
                 is_new_message_sent = 0
                 content = await message.reply("...")
@@ -108,7 +108,8 @@ class TelegramBot:
                     counter += 1
                     await asyncio.sleep(0.01)
             else:
-
+                await self.bot.send_message(message.from_user.id,
+                                            f"Sending a request to the {self.gpt.config['model']} model")
                 answer = await self.gpt.create_chat(text, message.from_user.id)
                 chunks = self.__text_into_chunks(answer)
 
