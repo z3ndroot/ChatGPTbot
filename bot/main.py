@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from telegram_bot import TelegramBot
 from chatai import GPT
 from voicing import Announcer
+from openai import api_base
 
 
 def check_folders(folders: list):
@@ -47,8 +48,9 @@ def main():
 
     # Setup configurations
     openai_config = {"token_openai": os.environ['TOKEN_OPENAI'],
-                     'proxy':os.environ.get('PROXY', None),
+                     'proxy': os.environ.get('PROXY', None),
                      'model': os.environ.get('MODEL', 'gpt-3.5-turbo-0301'),
+                     'base_api': os.environ.get('BASE_API', api_base),
                      'image_size': os.environ.get('IMAGE_SIZE', '512x512'),
                      'max_tokens': int(os.environ.get('MAX_TOKENS', 1200)),
                      'max_all_tokens': int(os.environ.get('MAX_ALL_TOKENS', 4097)),

@@ -12,7 +12,8 @@ class GPT:
     def __init__(self, config: dict):
         openai.api_key = config["token_openai"]
         openai.proxy = config['proxy']
-        self._config = config
+        openai.api_base = config['base_api']
+        self.config = config
 
     async def create_chat(self, message: str, chat_id: str):
         """
@@ -59,8 +60,8 @@ class GPT:
         """
         history = self.__read_file(chat_id)['history']
         history.append({"role": "user", "content": message})
-        token_len = self.num_tokens_from_messages(history)
-        if token_len + self._config['max_tokens'] > self._config['max_all_tokens']:
+        token_len = self.num_tokens_from_messages(history, self.config["model"])
+        if token_len + self.config['max_tokens'] > self.config['max_all_tokens']:
             logging.warning(
                 f"This model's maximum context length is 4097 tokens."
                 f" {token_len} in the messages, 1200 in the completion")
@@ -72,13 +73,13 @@ class GPT:
         self.__add_to_history(history, chat_id)
 
         return await openai.ChatCompletion.acreate(
-            model=self._config["model"],
+            model=self.config["model"],
             messages=history,
-            temperature=self._config["temperature"],
-            max_tokens=self._config["max_tokens"],
+            temperature=self.config["temperature"],
+            max_tokens=self.config["max_tokens"],
             n=1,
-            presence_penalty=self._config["presence_penalty"],
-            frequency_penalty=self._config["frequency_penalty"],
+            presence_penalty=self.config["presence_penalty"],
+            frequency_penalty=self.config["frequency_penalty"],
             stream=stream)
 
     async def generate_image(self, prompt: str):
@@ -91,7 +92,7 @@ class GPT:
             response = await openai.Image.acreate(
                 prompt=prompt,
                 n=1,
-                size=self._config["image_size"]
+                size=self.config["image_size"]
             )
             image_url = response['data'][0]['url']
             return image_url
@@ -129,7 +130,7 @@ class GPT:
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
             encoding = tiktoken.get_encoding("cl100k_base")
-        if model == self._config["model"]:  # note: future models may deviate from this
+        if model == self.config["model"]:  # note: future models may deviate from this
             num_tokens = 0
             for message in messages:
                 num_tokens += 4  # every message follows <im_start>{role/name}\n{content}<im_end>\n
@@ -151,7 +152,7 @@ class GPT:
             {"role": "user", "content": str(conversation)}
         ]
         response = await openai.ChatCompletion.acreate(
-            model=self._config["model"],
+            model=self.config["model"],
             messages=messages,
             temperature=0.4
         )
